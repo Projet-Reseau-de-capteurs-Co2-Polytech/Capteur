@@ -117,23 +117,18 @@ void printMeasurementSCD( uint16_t & co2, float & temperature, float & humidity)
   log(humidity, LN);
 }
 
-void readMeasurementSCD(){
+bool readMeasurementSCD(uint16_t & co2, float & temperature, float & humidity){
   uint16_t error;
   char errorMessage[256];
 
-  uint16_t co2;
-  float temperature;
-  float humidity;
   error = scd4x.readMeasurement(co2, temperature, humidity);
   if (error) {
     log("Error trying to execute readMeasurement(): ", LN);
     errorToString(error, errorMessage, 256);
     log(errorMessage, LN);
-  } else if (co2 == 0) {
-    log("Invalid sample detected, skipping.", LN);
-  } else {
-    printMeasurementSCD(co2, temperature, humidity);
+    return false;
   }
+  return true;
 }
 
 //--------------------------------------------------------------
@@ -179,6 +174,20 @@ void readMeasurementBME280(){
 }
 //--------------------------------------------------------------
 
+//-------------------------- LEDS ------------------------------
+
+void setupLEDS(){
+  pinMode(PD2,OUTPUT);
+}
+
+void updateLEDS(float co2){
+  if(co2 >= 1000){
+    digitalWrite(PD2, HIGH);
+  } else {
+    digitalWrite(PD2, LOW);
+  }
+}
+//--------------------------------------------------------------
 
 
 void setup() {
@@ -196,13 +205,29 @@ void setup() {
   }
 
   setupSCD();
-
+  setupLEDS();
     
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   delay(5000);
+
+  uint16_t co2 = 0;
+  float temperature = 0;
+  float humidity = 0;
+  bool success = false;
+
   readMeasurementBME280();
-  readMeasurementSCD();
+  success = readMeasurementSCD(co2,temperature,humidity);
+
+  if(success){
+    if (co2 == 0) {
+      log("Invalid sample detected, skipping.", LN);
+    } else {
+      printMeasurementSCD(co2, temperature, humidity);
+      updateLEDS(co2);
+    }
+  }
+
 }
