@@ -11,6 +11,8 @@ BME280 bme280;
 #define LN true
 #define NO_LN false
 
+#define SECOND 1000
+#define MINUTE 60000
 
 //---------------------------------------------------------------
 
@@ -291,6 +293,8 @@ void setup() {
 
 void loop() {
   delay(5000);
+  char minuteToWait = 10;
+  char minutePassed = 0;
 
   // bme280 variables
   float pressureBME = 0;
@@ -302,24 +306,55 @@ void loop() {
 
   bool success = false;
 
-  // Will also print it
-  readMeasurementBME280(pressureBME);
+  while(minutePassed < minuteToWait){
+    // Will also print it
+    readMeasurementBME280(pressureBME);
 
-  // We update the pressure
-  if(pressureBME != 0){
-    pressureBME = pressureBME / 100;
-    updatePressureSCD(pressureBME);
-  }
-
-  success = readMeasurementSCD(co2SCD,tempSCD,humiditySCD);
-
-  if(success){
-    if (co2SCD == 0) {
-      log("Invalid sample detected, skipping.", LN);
-    } else {
-      printMeasurementSCD(co2SCD, tempSCD, humiditySCD);
-      updateLEDS(co2SCD);
+    // We update the pressure
+    if(pressureBME != 0){
+      pressureBME = pressureBME / 100;
+      updatePressureSCD(pressureBME);
     }
+
+    success = readMeasurementSCD(co2SCD,tempSCD,humiditySCD);
+
+    if(success){
+      if (co2SCD == 0) {
+        log("Invalid sample detected, skipping.", LN);
+      } else {
+        printMeasurementSCD(co2SCD, tempSCD, humiditySCD);
+        updateLEDS(co2SCD);
+      }
+    }
+
+    if(minutePassed < minuteToWait){
+      // reset for next loop
+      pressureBME = 0;
+      co2SCD = 0;
+      tempSCD = 0;
+      humiditySCD = 0;
+
+      success = false;
+    }
+    
+    // we wait a minute before next measurement
+    delay(MINUTE);
   }
+
+  // We waited 10 min, so we now send this measurement to the xbee module
+
+
+  // We reset everything for a new 10 min loop
+  pressureBME = 0;
+  co2SCD = 0;
+  tempSCD = 0;
+  humiditySCD = 0;
+  success = false;
+
+  minutePassed = 0;
+
+  
+
+  
 
 }
