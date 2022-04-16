@@ -7,7 +7,15 @@ SensirionI2CScd4x scd4x;
 BME280 bme280;
 
 //---------------------------- Constant -------------------------
-#define VERBOSE true
+/**
+ * @brief true if you want to log eveything, false otherwise
+ * true will log this for exemple
+ * Temp: 38.09C Pressure: 102270.00Pa Altitude: 78.37m Humidity: 18.00%
+ * Co2:618 Temperature:28.35 Humidity:32.11
+ * 
+ * false will only log the messages that bypass this
+ */
+#define VERBOSE false
 #define LN true
 #define NO_LN false
 
@@ -271,6 +279,40 @@ void updateLEDS(float co2){
 }
 //--------------------------------------------------------------
 
+//-------------------------- XBee ------------------------------
+
+void printUint16HexXBee(uint16_t value) {
+    Serial.print(value < 4096 ? "0" : "");
+    Serial.print(value < 256 ? "0" : "");
+    Serial.print(value < 16 ? "0" : "");
+    Serial.print(value, HEX);
+}
+
+/**
+ * @brief Send the data to the XBee using the serial port
+ * 
+ * Data will use the following format:
+ * SensorID;CO2
+ * 
+ * Currently uses the serial port to send the data, but the port might change in the future to a software serial port
+ * @param co2 
+ */
+void sendData(uint16_t co2){
+  uint16_t serial0;
+  uint16_t serial1;
+  uint16_t serial2;
+  scd4x.getSerialNumber(serial0, serial1, serial2);
+
+  printUint16HexXBee(serial0);
+  printUint16HexXBee(serial1);
+  printUint16HexXBee(serial2);
+
+  Serial.print(";");
+  
+  Serial.println(co2);
+}
+
+//--------------------------------------------------------------
 
 void setup() {
 
@@ -293,8 +335,8 @@ void setup() {
 
 void loop() {
   delay(5000);
-  char minuteToWait = 10;
-  char minutePassed = 0;
+  int minuteToWait = 10;
+  int minutePassed = 0;
 
   // bme280 variables
   float pressureBME = 0;
@@ -327,6 +369,12 @@ void loop() {
       }
     }
 
+    
+    
+    // we wait a minute before next measurement
+    delay(MINUTE);
+    minutePassed +=1;
+
     if(minutePassed < minuteToWait){
       // reset for next loop
       pressureBME = 0;
@@ -336,13 +384,10 @@ void loop() {
 
       success = false;
     }
-    
-    // we wait a minute before next measurement
-    delay(MINUTE);
   }
 
   // We waited 10 min, so we now send this measurement to the xbee module
-
+  sendData(co2SCD);
 
   // We reset everything for a new 10 min loop
   pressureBME = 0;
