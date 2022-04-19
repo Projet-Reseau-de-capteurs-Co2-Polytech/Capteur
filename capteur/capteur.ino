@@ -10,7 +10,7 @@ BME280 bme280;
 /**
  * @brief true if you want to log eveything, false otherwise
  * true will log this for exemple
- * Temp: 38.09C Pressure: 102270.00Pa Altitude: 78.37m Humidity: 18.00%
+ * Temp: 28.09C Pressure: 102270.00Pa Altitude: 78.37m Humidity: 18.00%
  * Co2:618 Temperature:28.35 Humidity:32.11
  * 
  * false will only log the messages that bypass this
@@ -336,7 +336,7 @@ void setup() {
 void loop() {
   delay(5000);
   int minuteToWait = 10;
-  int minutePassed = 0;
+  int minutePassed = 9;
 
   // bme280 variables
   float pressureBME = 0;
