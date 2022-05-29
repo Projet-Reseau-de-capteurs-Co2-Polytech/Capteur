@@ -6,6 +6,7 @@
 
 SensirionI2CScd4x scd4x;
 BME280 bme280;
+String sensor_name;
 
 
 //---------------------------- Parameters -----------------------
@@ -20,7 +21,8 @@ BME280 bme280;
 #define VERBOSE false
 
 /**
- * @brief leave empty to use the serial number. else, use it to have a custom sensor name
+ * @brief leave empty or set to "null" to use the serial number. Else, use it to have a custom sensor name
+ * Cannot have more than 15 characters 
  */
 #define SENSOR_NAME ""
 
@@ -55,6 +57,8 @@ BME280 bme280;
 
 #define SECOND 1000
 #define MINUTE 60000
+
+#define SENSOR_NAME_MAX_LENGTH 15
 
 //---------------------------------------------------------------
 
@@ -325,6 +329,9 @@ void setupLEDS() {
   pinMode(PD3,OUTPUT);
   pinMode(PD4,OUTPUT);
 
+  //Built-in led for some error display
+  pinMode(LED_BUILTIN, OUTPUT);
+
 }
 
 /**
@@ -368,7 +375,7 @@ void printUint16HexXBee(uint16_t value) {
  */
 void sendData(uint16_t co2) {
 
-  if(SENSOR_NAME == ""){
+  if(sensor_name.equals("")){
     uint16_t serial0;
     uint16_t serial1;
     uint16_t serial2;
@@ -396,6 +403,36 @@ void setup() {
       delay(100);
   }
   log("starting setup..", LN);
+
+  if(NEW_NAME){
+    if(SENSOR_NAME.length() > SENSOR_NAME_MAX_LENGTH){
+        log("Error : new SENSOR_NAME cannot have more than 15 characters");
+        while(true){
+          digitalWrite(LED_BUILTIN, HIGH);
+          delay(500);
+          digitalWrite(LED_BUILTIN, LOW);
+          delay(500)
+        }
+    }
+
+    if(SENSOR_NAME.length() > 0 && !SENSOR_NAME.equals("null")){
+      writeStringToEEPROM(0,SENSOR_NAME);
+      sensor_name = SENSOR_NAME;
+    }else{
+      writeStringToEEPROM(0,"null");
+      sensor_name = "";
+    }
+
+  }else{
+    String eeprom_name = readStringFromEEPROM(0);
+    if(eeprom_name.equals("null")){
+      sensor_name = "";
+    }else{
+      sensor_name = eeprom_name;
+    }
+  }
+
+  
 
   Wire.begin();
 
