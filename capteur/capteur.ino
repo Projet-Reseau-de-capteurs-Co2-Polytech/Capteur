@@ -2,6 +2,7 @@
 #include <SensirionI2CScd4x.h>
 #include "Seeed_BME280.h"
 #include <Wire.h>
+#include <EEPROM.h>
 
 SensirionI2CScd4x scd4x;
 BME280 bme280;
@@ -23,6 +24,11 @@ BME280 bme280;
  */
 #define SENSOR_NAME ""
 
+/**
+ * @brief true if you want to change the name, false if you want to use the saved name
+ * please only put true when you need to change the name, and put it back to false afterward, because it uses the EEPROM and it has a limited rewrite capacity
+ */
+#define NEW_NAME false
 //---------------------------------------------------------------
 
 
@@ -93,6 +99,30 @@ void log(int number, bool ln = false, bool bypassVerbose = false) {
 
 //---------------------------------------------------------------
 
+
+//---------------------------- EEPROM ---------------------------
+void writeStringToEEPROM(int addrOffset, const String &strToWrite)
+{
+  byte len = strToWrite.length();
+  EEPROM.write(addrOffset, len);
+  for (int i = 0; i < len; i++)
+  {
+    EEPROM.write(addrOffset + 1 + i, strToWrite[i]);
+  }
+}
+String readStringFromEEPROM(int addrOffset)
+{
+  int newStrLen = EEPROM.read(addrOffset);
+  char data[newStrLen + 1];
+  for (int i = 0; i < newStrLen; i++)
+  {
+    data[i] = EEPROM.read(addrOffset + 1 + i);
+  }
+  data[newStrLen] = '\0';
+  return String(data);
+}
+
+//---------------------------------------------------------------
 
 
 //---------------------------- SCD Functions --------------------
