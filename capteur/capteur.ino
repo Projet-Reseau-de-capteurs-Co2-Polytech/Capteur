@@ -29,6 +29,22 @@ BME280 bme280;
  * please only put true when you need to change the name, and put it back to false afterward, because it uses the EEPROM and it has a limited rewrite capacity
  */
 #define NEW_NAME false
+
+
+/**
+ * @brief Green led minimum level
+ */
+#define GREEN_LED_MIN_PPM 0
+
+/**
+ * @brief Orange led minimum level
+ */
+#define ORANGE_LED_MIN_PPM 800
+
+/**
+ * @brief Red led minimum level
+ */
+#define RED_LED_MIN_PPM 1000
 //---------------------------------------------------------------
 
 
@@ -304,7 +320,11 @@ void readMeasurementBME280(float & pressure) {
  * @brief Setup the LED pins
  */
 void setupLEDS() {
+  //PDX <=> PortD X <=> DX on the board
   pinMode(PD2,OUTPUT);
+  pinMode(PD3,OUTPUT);
+  pinMode(PD4,OUTPUT);
+
 }
 
 /**
@@ -313,10 +333,17 @@ void setupLEDS() {
  * @param co2 the CO2 concentration
  */
 void updateLEDS(float co2) {
-  if(co2 >= 1000){
+  digitalWrite(PD2, LOW);
+  digitalWrite(PD3, LOW);
+  digitalWrite(PD4, LOW);
+
+
+  if(co2 >= RED_LED_MIN_PPM){
+    digitalWrite(PD4, HIGH);
+  } else if(co2 >= ORANGE_LED_MIN_PPM){
+    digitalWrite(PD3, HIGH);
+  } else if(co2 >= GREEN_LED_MIN_PPM){
     digitalWrite(PD2, HIGH);
-  } else {
-    digitalWrite(PD2, LOW);
   }
 }
 //--------------------------------------------------------------
