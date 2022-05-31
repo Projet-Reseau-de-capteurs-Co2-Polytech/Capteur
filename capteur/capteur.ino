@@ -6,7 +6,6 @@
 
 SensirionI2CScd4x scd4x;
 BME280 bme280;
-String sensor_name;
 
 
 //---------------------------- Parameters -----------------------
@@ -18,13 +17,13 @@ String sensor_name;
  * 
  * false will only log the messages that bypass this
  */
-#define VERBOSE false
+#define VERBOSE true
 
 /**
  * @brief leave empty or set to "null" to use the serial number. Else, use it to have a custom sensor name
  * Cannot have more than 15 characters 
  */
-#define SENSOR_NAME ""
+const String SENSOR_NAME = "";
 
 /**
  * @brief true if you want to change the name, false if you want to use the saved name
@@ -71,7 +70,7 @@ String sensor_name;
  * @param ln if true, print a new line at the end of the message
  * @param bypassVerbose if true, bypass the verbose mode and print the message
  */
-void log(String message = "", bool ln = false, bool bypassVerbose = false) {
+void log(const String & message = "", bool ln = false, bool bypassVerbose = false) {
   if(bypassVerbose || VERBOSE){
     if(ln){
       Serial.println(message);
@@ -121,7 +120,7 @@ void log(int number, bool ln = false, bool bypassVerbose = false) {
 
 
 //---------------------------- EEPROM ---------------------------
-void writeStringToEEPROM(int addrOffset, const String &strToWrite)
+void writeStringToEEPROM(int addrOffset, const String & strToWrite)
 {
   byte len = strToWrite.length();
   EEPROM.write(addrOffset, len);
@@ -146,7 +145,7 @@ String readStringFromEEPROM(int addrOffset)
 
 
 //---------------------------- SCD Functions --------------------
-void printUint16Hex(uint16_t value) {
+void printUint16Hex(uint16_t & value) {
     log(value < 4096 ? "0" : "",NO_LN);
     log(value < 256 ? "0" : "",NO_LN);
     log(value < 16 ? "0" : "",NO_LN);
@@ -155,7 +154,7 @@ void printUint16Hex(uint16_t value) {
     }
 }
 
-void printSerialNumber(uint16_t serial0, uint16_t serial1, uint16_t serial2) {
+void printSerialNumber(uint16_t & serial0, uint16_t & serial1, uint16_t & serial2) {
     log("Serial: 0x", NO_LN);
     printUint16Hex(serial0);
     printUint16Hex(serial1);
@@ -210,15 +209,9 @@ void setupSCD() {
  * @param temperature the temperature
  * @param humidity the humidity
  */
-void printMeasurementSCD( uint16_t & co2, float & temperature, float & humidity) {
+void printMeasurementSCD( uint16_t & co2) {
   log("Co2:");
-  log(String(co2));
-  log("\t");
-  log("Temperature:");
-  log(temperature);
-  log("\t");
-  log("Humidity:");
-  log(humidity, LN);
+  log(String(co2), LN);
 }
 
 /**
@@ -298,23 +291,24 @@ void printMeasurementBME280(float & temp, float & pressure, uint32_t & humidity,
 }
 
 /**
+ * @brief Print the pressure of the BME280 sensor
+ * 
+ * @param pressure Pressure
+ */
+void printPressureBME280(float & pressure) {
+  //print atmospheric pressure data
+  log("Pressure: ");
+  log(pressure);
+  log("Pa\t");
+}
+
+/**
  * @brief read the temperature, pressure and humidity from the BME280 sensor. Will print the data on the serial port
  * 
  * @param pressure variable to store the pressure data
  */
 void readMeasurementBME280(float & pressure) {
-
-  float temp;
-  uint32_t humidity;
-  float altitude;
-
-  temp = bme280.getTemperature();
   pressure = bme280.getPressure();
-  altitude = bme280.calcAltitude(pressure);
-  humidity = bme280.getHumidity();
-
-  printMeasurementBME280(temp,pressure,humidity,altitude);
-
 }
 //--------------------------------------------------------------
 
@@ -339,7 +333,7 @@ void setupLEDS() {
  * 
  * @param co2 the CO2 concentration
  */
-void updateLEDS(float co2) {
+void updateLEDS(const float & co2) {
   digitalWrite(PD2, LOW);
   digitalWrite(PD3, LOW);
   digitalWrite(PD4, LOW);
@@ -357,7 +351,7 @@ void updateLEDS(float co2) {
 
 //-------------------------- XBee ------------------------------
 
-void printUint16HexXBee(uint16_t value) {
+void printUint16HexXBee(uint16_t & value) {
     Serial.print(value < 4096 ? "0" : "");
     Serial.print(value < 256 ? "0" : "");
     Serial.print(value < 16 ? "0" : "");
@@ -373,9 +367,9 @@ void printUint16HexXBee(uint16_t value) {
  * Currently uses the serial port to send the data, but the port might change in the future to a software serial port
  * @param co2 
  */
-void sendData(uint16_t co2) {
+void sendData(uint16_t & co2) {
 
-  if(sensor_name.equals("")){
+  if(SENSOR_NAME.equals("")){
     uint16_t serial0;
     uint16_t serial1;
     uint16_t serial2;
@@ -411,24 +405,23 @@ void setup() {
           digitalWrite(LED_BUILTIN, HIGH);
           delay(500);
           digitalWrite(LED_BUILTIN, LOW);
-          delay(500)
+          delay(500);
         }
     }
 
     if(SENSOR_NAME.length() > 0 && !SENSOR_NAME.equals("null")){
       writeStringToEEPROM(0,SENSOR_NAME);
-      sensor_name = SENSOR_NAME;
     }else{
       writeStringToEEPROM(0,"null");
-      sensor_name = "";
+      SENSOR_NAME = "";
     }
 
   }else{
     String eeprom_name = readStringFromEEPROM(0);
     if(eeprom_name.equals("null")){
-      sensor_name = "";
+      SENSOR_NAME = "";
     }else{
-      sensor_name = eeprom_name;
+      SENSOR_NAME = eeprom_name;
     }
   }
 
@@ -454,43 +447,42 @@ void loop() {
   int minutePassed = 9;
 
   // bme280 variables
-  float pressureBME = 0;
+  float pressureBME;
 
   // scd variables
-  uint16_t co2SCD = 0;
+  uint16_t co2SCD;
 
-  uint16_t error;
+  bool success;
 
 
   do{
     pressureBME = 0;
     co2SCD = 0;
+    success = false;
 
     readMeasurementBME280(pressureBME);
 
     // We update the pressure
     if(pressureBME != 0){
       pressureBME = pressureBME / 100;
+      printPressureBME280(pressureBME);
       updatePressureSCD(pressureBME);
     }
 
-    error = readMeasurementSCD(co2SCD);
+    success = readMeasurementSCD(co2SCD);
 
-    if(error){
-      char errorMessage[256];
-      log("Error trying to read CO2 level: ", LN);
-      errorToString(error, errorMessage, 256);
-      log(errorMessage, LN);
+    if(!success){
+      log("Error trying to read CO2 level, skipping.", LN);
       continue; // we don't increment the minutePassed because we don't want to send wrong data
     }else{
+      printMeasurementSCD(co2SCD);
       if (co2SCD == 0) {
         log("Invalid sample detected, skipping.", LN);
         continue; // we don't increment the minutePassed because we don't want to send wrong data
       }
+      
     }
 
-    // won't work because we don't get the temp and humidity anymore
-    //printMeasurementSCD(co2SCD, tempSCD, humiditySCD);
     updateLEDS(co2SCD);
     minutePassed++;
 
