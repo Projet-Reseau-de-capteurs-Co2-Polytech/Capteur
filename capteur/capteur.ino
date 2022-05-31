@@ -21,19 +21,24 @@ uint16_t serial2;
  * 
  * false will only log the messages that bypass this
  */
-#define VERBOSE true
+#define VERBOSE false
 
 /**
  * @brief leave empty or set to "null" to use the serial number. Else, use it to have a custom sensor name
  * Cannot have more than 15 characters 
  */
-const String SENSOR_NAME = "";
+String SENSOR_NAME = "";
 
 /**
  * @brief true if you want to change the name, false if you want to use the saved name
  * please only put true when you need to change the name, and put it back to false afterward, because it uses the EEPROM and it has a limited rewrite capacity
  */
 #define NEW_NAME false
+
+/**
+ * @brief number of minutes to wait between two measure (will send the data at the end of this period
+ */
+#define MINUTES_TO_WAIT_TOTAL 10
 
 
 /**
@@ -431,16 +436,13 @@ void setup() {
 
   setupSCD();
   setupLEDS();
-    
+  // delay needed to be sure scd is set up
+  delay(5000);
 }
 
 
 void loop() {
-  // delay needed to be sure scd is set up
-  delay(5000);
-
-  int minuteToWait = 10;
-  int minutePassed = 9;
+  int minutePassed = 0;
 
   // bme280 variables
   float pressureBME;
@@ -482,12 +484,12 @@ void loop() {
     updateLEDS(co2SCD);
     minutePassed++;
 
-    if(minutePassed >= minuteToWait){
+    if(minutePassed >= MINUTES_TO_WAIT_TOTAL){
       sendData(co2SCD);
     }
 
     delay(MINUTE);
     
-  }while( minutePassed < minuteToWait );
+  }while( minutePassed < MINUTES_TO_WAIT_TOTAL );
   
 }
