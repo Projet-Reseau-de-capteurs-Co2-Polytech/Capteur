@@ -7,6 +7,10 @@
 SensirionI2CScd4x scd4x;
 BME280 bme280;
 
+uint16_t serial0;
+uint16_t serial1;
+uint16_t serial2;
+
 
 //---------------------------- Parameters -----------------------
 /**
@@ -154,7 +158,7 @@ void printUint16Hex(uint16_t & value) {
     }
 }
 
-void printSerialNumber(uint16_t & serial0, uint16_t & serial1, uint16_t & serial2) {
+void printSerialNumber() {
     log("Serial: 0x", NO_LN);
     printUint16Hex(serial0);
     printUint16Hex(serial1);
@@ -178,17 +182,14 @@ void setupSCD() {
       errorToString(error, errorMessage, 256);
       log(errorMessage, LN);
   }
-
-  uint16_t serial0;
-  uint16_t serial1;
-  uint16_t serial2;
+  
   error = scd4x.getSerialNumber(serial0, serial1, serial2);
   if (error) {
       log("Error trying to execute getSerialNumber(): ", NO_LN);
       errorToString(error, errorMessage, 256);
       log(errorMessage, LN);
   } else {
-      printSerialNumber(serial0, serial1, serial2);
+      printSerialNumber();
   }
 
   // Start Measurement
@@ -369,12 +370,7 @@ void printUint16HexXBee(uint16_t & value) {
  */
 void sendData(uint16_t & co2) {
 
-  if(SENSOR_NAME.equals("")){
-    uint16_t serial0;
-    uint16_t serial1;
-    uint16_t serial2;
-    scd4x.getSerialNumber(serial0, serial1, serial2);
-  
+  if(SENSOR_NAME.equals("")){ 
     printUint16HexXBee(serial0);
     printUint16HexXBee(serial1);
     printUint16HexXBee(serial2);
