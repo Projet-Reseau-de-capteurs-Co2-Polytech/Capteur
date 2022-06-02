@@ -15,10 +15,7 @@ uint16_t serial2;
 //---------------------------- Parameters -----------------------
 /**
  * @brief true if you want to log eveything, false otherwise
- * true will log this for exemple
- * Temp: 28.09C Pressure: 102270.00Pa Altitude: 78.37m Humidity: 18.00%
- * Co2:618 Temperature:28.35 Humidity:32.11
- * 
+ * useful for debug
  * false will only log the messages that bypass this
  */
 #define VERBOSE false
@@ -60,13 +57,19 @@ String SENSOR_NAME = "";
 
 //---------------------------- Constant -------------------------
 
+/**
+ * Both constant used to say if you want a new line or not
+ */
 #define LN true
 #define NO_LN false
 
 #define SECOND 1000
 #define MINUTE 60000
 
-#define SENSOR_NAME_MAX_LENGTH 15
+/**
+ * Max amount of character (not including the \0)
+ */
+#define SENSOR_NAME_MAX_LENGTH 12
 
 //---------------------------------------------------------------
 
@@ -129,6 +132,11 @@ void log(int number, bool ln = false, bool bypassVerbose = false) {
 
 
 //---------------------------- EEPROM ---------------------------
+/**
+ * @brief write a string to the EEPROM
+ * @param addrOffset the memory address
+ * @param strToWrite the string to write
+ */
 void writeStringToEEPROM(int addrOffset, const String & strToWrite)
 {
   byte len = strToWrite.length();
@@ -138,6 +146,12 @@ void writeStringToEEPROM(int addrOffset, const String & strToWrite)
     EEPROM.write(addrOffset + 1 + i, strToWrite[i]);
   }
 }
+
+/**
+ * @brief read a string from the EEPROM
+ * @param addrOffset the memory address
+ * @return the string stored
+ */
 String readStringFromEEPROM(int addrOffset)
 {
   int newStrLen = EEPROM.read(addrOffset);
@@ -442,7 +456,7 @@ void setup() {
 
 
 void loop() {
-  int minutePassed = 0;
+  int minutePassed = 9;
 
   // bme280 variables
   float pressureBME;
